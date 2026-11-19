@@ -1,4 +1,4 @@
-﻿using Gradebook.Gradebook;
+﻿using Gradebooks.Gradebook;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +12,7 @@ namespace Gradebook.Gradebook.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private static readonly List<UInstall-Package Microsoft.AspNetCore.Authentication.JwtBearer -Version 8.0.11
-            
-            ser> _users = new();
+        private static readonly List<User> _users = new();
         private static int _nextId = 1;
         private static readonly PasswordHasher<User> _hasher = new();
         private readonly IConfiguration _config;
