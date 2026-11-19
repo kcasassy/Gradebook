@@ -1,123 +1,262 @@
-﻿ < !DOCTYPE html >
-< html lang = "en" >
-< head >
-    < meta charset = "UTF-8" />
-    < title > Class Gradebook </ title >
-    < style >
-        body {
-    font - family: system - ui, sans - serif;
-margin: 2rem;
-    max - width: 620px;
-}
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Gradebook</title>
 
-table {
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 2rem;
+            max-width: 620px;
+        }
+
+        table {
             border-collapse: collapse;
-margin - top: .5rem;
+            margin-top: 0.5rem;
+            width: 100%;
         }
 
         th, td {
             border: 1px solid #ccc;
-            padding: 5px 10px;
+            padding: 8px 10px;
+            text-align: left;
         }
 
         fieldset {
             margin-bottom: 1rem;
+            padding: 1rem;
+        }
+
+        input {
+            padding: 7px;
+            margin: 4px;
+        }
+
+        button {
+            padding: 7px 12px;
+            margin: 4px;
+            cursor: pointer;
         }
 
         .msg {
             color: #555;
-            min - height: 1.2em;
+            min-height: 1.2em;
         }
-    </ style >
-</ head >
-< body >
-    < h1 > Class Gradebook </ h1 >
-    < fieldset >
-        < legend > Register / Login </ legend >
-        < input id = "user" placeholder = "username" />
-        < input id = "pass" type = "password" placeholder = "password" />
-        < button onclick = "register()" > Register </ button >
-        < button onclick = "login()" > Login </ button >
-        < button onclick = "logout()" > Logout </ button >
-        < p id = "authMsg" class= "msg" ></ p >
-    </ fieldset >
-    < fieldset >
-        < legend > Any logged -in user </ legend >
-        < button onclick = "myGrades()" > View my grades</button>
-    </fieldset>
+    </style>
+</head>
+
+<body>
+
+    <h1>Class Gradebook</h1>
+
     <fieldset>
-        <legend>Instructor only</legend>
-        <button onclick = "allGrades()" > View ALL grades</button><br /><br />
-        <input id = "gStudent" placeholder= "student" />
-        < input id= "gSubject" placeholder= "subject" />
-        < input id= "gScore" type= "number" placeholder= "score" />
-        < button onclick= "postGrade()" > Post grade</button>
+        <legend>Register / Login</legend>
+
+        <input id="user" placeholder="username">
+        <input id="pass" type="password" placeholder="password">
+
+        <button onclick="register()">Register</button>
+        <button onclick="login()">Login</button>
+        <button onclick="logout()">Logout</button>
+
+        <p id="authMsg" class="msg"></p>
     </fieldset>
+
+    <fieldset>
+        <legend>Any logged-in user</legend>
+        <button onclick="myGrades()">View My Grades</button>
+    </fieldset>
+
+    <fieldset>
+        <legend>Instructor Only</legend>
+
+        <button onclick="allGrades()">View ALL Grades</button>
+
+        <br><br>
+
+        <input id="gStudent" placeholder="Student">
+        <input id="gSubject" placeholder="Subject">
+        <input id="gScore" type="number" placeholder="Score">
+
+        <button onclick="postGrade()">Post Grade</button>
+    </fieldset>
+
     <table>
-        <thead><tr><th>Student</th><th>Subject</th><th>Score</th></tr></thead>
-        <tbody id = "rows" ></ tbody >
-    </ table >
-    < p id= "gradeMsg" class= "msg" ></ p >
-    < script >const BASE = "https://localhost:7273";
-// attaches the token and surfaces 401 / 403 in one place
-async function authFetch(url, options = {}) {
-    const token = localStorage.getItem("token");
-    options.headers = options.headers || { };
-    if (token) options.headers["Authorization"] = "Bearer " + token;
-    const res = await fetch(url, options);
-    if (res.status === 401) msg("401 — please log in first.");
-    if (res.status === 403) msg("403 — you are not allowed to do that.");
-    return res;
-}
-function msg(t) { document.getElementById("gradeMsg").textContent = t; }
-function auth(t) { document.getElementById("authMsg").textContent = t; }
-const body = () => JSON.stringify({
-      username: document.getElementById("user").value,
-  password: document.getElementById("pass").value
-    });
-async function register()
-{
-    const res = await fetch(BASE + "/api/auth/register",
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: body() });
-auth(res.ok ? "Registered — now log in." : "Register failed (" + res.status + ")");
-    }
-    async function login()
-{
-    const res = await fetch(BASE + "/api/auth/login",
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: body() });
-if (!res.ok) { auth("Login failed."); return; }
-const data = await res.json();
-localStorage.setItem("token", data.token);
-auth("Logged in as " + document.getElementById("user").value + " ✓");
-    }
-    function logout() { localStorage.removeItem("token"); auth("Logged out."); render([]); }
-function render(list)
-{
-    document.getElementById("rows").innerHTML =
-      list.map(g => "<tr><td>" + g.studentUsername + "</td><td>" +
-                    g.subject + "</td><td>" + g.score + "</td></tr>").join("");
-}
-async function myGrades()
-{
-    const res = await authFetch(BASE + "/api/grades/me");
-    if (res.ok) { render(await res.json()); msg("Your grades."); }
-}
-async function allGrades()
-{
-    const res = await authFetch(BASE + "/api/grades");
-    if (res.ok) { render(await res.json()); msg("All grades (instructor view)."); }
-}
-async function postGrade()
-{
-    const res = await authFetch(BASE + "/api/grades", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-studentUsername: document.getElementById("gStudent").value,
-          subject: document.getElementById("gSubject").value,
-          score: Number(document.getElementById("gScore").value)
-        })
-      });
-if (res.ok) { msg("Grade posted ✓"); allGrades(); }
-    }</ script >
-</ body >
-</ html >
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Subject</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+
+        <tbody id="rows"></tbody>
+    </table>
+
+    <p id="gradeMsg" class="msg"></p>
+
+    <script>
+        // Automatically uses the current ASP.NET Core address.
+        const BASE = window.location.origin;
+
+        async function authFetch(url, options = {}) {
+            const token = localStorage.getItem("token");
+
+            options.headers = options.headers || {};
+
+            if (token) {
+                options.headers["Authorization"] = "Bearer " + token;
+            }
+
+            try {
+                const res = await fetch(url, options);
+
+                if (res.status === 401) {
+                    msg("401 - Please log in first.");
+                }
+
+                if (res.status === 403) {
+                    msg("403 - You are not allowed to do that.");
+                }
+
+                return res;
+            } catch (error) {
+                msg("Cannot connect to the API. Check the server.");
+                console.error(error);
+                return null;
+            }
+        }
+
+        function msg(t) {
+            document.getElementById("gradeMsg").textContent = t;
+        }
+
+        function auth(t) {
+            document.getElementById("authMsg").textContent = t;
+        }
+
+        const body = () => JSON.stringify({
+            username: document.getElementById("user").value,
+            password: document.getElementById("pass").value
+        });
+
+        async function register() {
+            try {
+                const res = await fetch(BASE + "/api/auth/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: body()
+                });
+
+                auth(
+                    res.ok
+                        ? "Registered - now log in."
+                        : "Register failed (" + res.status + ")"
+                );
+            } catch (error) {
+                auth("Cannot connect to the API.");
+                console.error(error);
+            }
+        }
+
+        async function login() {
+            try {
+                const res = await fetch(BASE + "/api/auth/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: body()
+                });
+
+                if (!res.ok) {
+                    auth("Login failed (" + res.status + ").");
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (!data.token) {
+                    auth("Login response did not contain a token.");
+                    return;
+                }
+
+                localStorage.setItem("token", data.token);
+
+                auth(
+                    "Logged in as " +
+                    document.getElementById("user").value + " ✓"
+                );
+
+            } catch (error) {
+                auth("Cannot connect to the API.");
+                console.error(error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            auth("Logged out.");
+            render([]);
+            msg("");
+        }
+
+        function render(list) {
+            document.getElementById("rows").innerHTML =
+                list.map(g =>
+                    "<tr><td>" + g.studentUsername +
+                    "</td><td>" + g.subject +
+                    "</td><td>" + g.score +
+                    "</td></tr>"
+                ).join("");
+        }
+
+        async function myGrades() {
+            const res = await authFetch(BASE + "/api/grades/me");
+
+            if (res && res.ok) {
+                render(await res.json());
+                msg("Your grades.");
+            }
+        }
+
+        async function allGrades() {
+            const res = await authFetch(BASE + "/api/grades");
+
+            if (res && res.ok) {
+                render(await res.json());
+                msg("All grades (instructor view).");
+            }
+        }
+
+        async function postGrade() {
+            const res = await authFetch(BASE + "/api/grades", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    studentUsername:
+                        document.getElementById("gStudent").value,
+
+                    subject:
+                        document.getElementById("gSubject").value,
+
+                    score:
+                        Number(document.getElementById("gScore").value)
+                })
+            });
+
+            if (res && res.ok) {
+                msg("Grade posted ✓");
+                await allGrades();
+            }
+        }
+    </script>
+
+</body>
+</html>
