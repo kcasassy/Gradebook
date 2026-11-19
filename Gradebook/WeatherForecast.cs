@@ -1,4 +1,4 @@
-namespace Gradebooks
+namespace Gradebook.Gradebook
 {
     public class WeatherForecast
     {
